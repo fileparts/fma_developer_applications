@@ -40,6 +40,9 @@ i {
   width:940px;
   margin:auto auto;
 }
+.text-right {
+  text-align:right !important;
+}
 div.nav {
   height:auto;
   background:#F5F5F5;
@@ -363,8 +366,12 @@ a.btn-grp:last-child {
   width:100px;
 }
 .options {
+  overflow:auto;
   text-align:right;
 }
+  .options > * {
+    float:right;
+  }
 /* -- calendar -- */
 div.date-controls {
 

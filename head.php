@@ -1,9 +1,17 @@
-<title>FMA VM Booking</title>
+<title>FMA Developer Applications</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <link rel="stylesheet" type="text/css" href="./styles/default.css" />
 <link rel="stylesheet" type="text/css" href="./styles/font-awesome.min.css" />
 <script src="./scripts/jquery-1.11.3.min.js"></script>
 <script src="./scripts/global.js"></script>
+<style>
+	a:hover {
+		color:#000;
+	}
+	td p.alert {
+		line-height:20px;
+	}
+</style>
 <script>
 	$(document).ready(function() {
 		$('.confirm').on('click', function () {
@@ -13,11 +21,11 @@
 </script>
 <?php
 	function redirect($url) {
-		$string 	= '<script type="text/javascript">';
-		$string 	.= 'setTimeout(function() {';
-		$string 	.= 'window.location = "' . $url . '"';
+		$string = '<script type="text/javascript">';
+		$string .= 'setTimeout(function() {';
+		$string .= 'window.location = "' . $url . '"';
 		$string	.= '}, 2000)';
-		$string 	.= '</script>';
+		$string .= '</script>';
 		echo $string;
 	};
 ?>

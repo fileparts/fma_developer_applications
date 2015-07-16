@@ -1,83 +1,172 @@
-<?php include('./config.php'); ?>
+<?php include('config.php'); ?>
 <html>
 <head>
-<?php include('./head.php'); ?>
+	<?php include('head.php'); ?>
 </head>
 <body>
-  <?php include('./nav.php'); ?>
-  <div class="main wrp">
-<?php
-    if($_SESSION['vm_userPerms'] > 3) {
-      if(isset($_GET['t'])) {
-        $creationType = $_GET['t'];
+	<?php include('nav.php'); ?>
+	<div class="clr wrp mrg-top-lrg">
+		<?php include('brand.php'); ?>
+	</div>
+	<div class="clr wrp mrg-btm-lrg">
+		<p><?php include('motd.php'); ?></p>
+	</div>
+	<div class="clr wrp">
+		<?php
+			if(!isset($_GET['t'])) {
+		?>
+		<p class="alert">A Creation Type is Required, Redirecting...</p>
+		<?php
+				redirect("./");
+			} else {
+				$type = $_GET['t'];
+				if($type == "section") {
+		?>
+		<form method="post" action="./action.php?a=create">
+			<input name="formType" type="hidden" value="section" required />
+			<table class="fixed">
+				<tr>
+					<td>
+						<p>Enter Section Name</p>
+					</td>
+					<td>
+						<input name="formName" type="text" placeholder="Enter Section Name" autofocus autocomplete="off" required />
+					</td>
+				</tr>
+				<tr>
+					<td></td>
+					<td>
+						<button class="confirm btn-warning" type="submit">Submit</button>
+					</td>
+				</tr>
+			</table>
+		</form>
+		<?php
+				} else {
+					if($type == "sub" || $type == "file" || $type == "link") {
+						if(!isset($_GET['id'])) {
+		?>
+		<p class="alert">A Parent ID is Required, Redirecting...</p>
+		<?php
+							redirect("./");
+						} else {
+							$parentID = $_GET['id'];
 
-        if($creationType == "h") {
-?>
-    <form method="post" action="./action.php?a=create">
-      <input name="creationType" type="hidden" value="<?php echo $creationType; ?>" required />
-      <h1 class="mrg-btm-x-lrg">Create a Host</h1>
-      <table class="fixed">
-        <tr>
-          <td><p>Enter Host Name</p></td>
-          <td><input name="formName" type="text" placeholder="Host Name" autocomplete="off" autofocus required /></td>
-        </tr>
-        <tr>
-          <td><p>Enter Host IP</p></td>
-          <td><input name="formIP" type="text" placeholder="Host IP" autocomplete="off" required /></td>
-        </tr>
-        <tr>
-          <td><p>Select Visibility</p></td>
-          <td>
-            <select name="formPerms" required>
-              <option selected disabled>Select Visibility</option>
-              <option value="1">Visible</option>
-              <option value="0">Not Visible</option>
-            </select>
-          </td>
-        </tr>
-        <tr>
-          <td></td>
-          <td><button class="btn-warning confirm" type="submit">Submit</button></td>
-        </tr>
-      </table>
-    </form>
-<?php
-        } else if($creationType == "us") {
-?>
-    <form method="post" action="./action.php?a=create">
-      <input name="creationType" type="hidden" value="<?php echo $creationType; ?>" required />
-      <h1 class="mrg-btm-x-lrg">Create a Usage</h1>
-      <table class="fixed">
-        <tr>
-          <td><p>Enter Usage Name</p></td>
-          <td><input name="formName" type="text" placeholder="Usage Name" autocomplete="off" autofocus required /></td>
-        </tr>
-        <tr>
-          <td></td>
-          <td><button class="btn-warning confirm" type="submit">Submit</button></td>
-        </tr>
-      </table>
-    </form>
-<?php
-        } else {
-?>
-    <p class="alert">a valid creation type is required, redirecting...</p>
-<?php
-        redirect("./admin.php");
-        };
-      } else {
-?>
-    <p class="alert">a creation type is required, redirecting...</p>
-<?php
-        redirect("./admin.php");
-      };
-    } else {
-?>
-    <p class="alert">you do not have permission to view this page, redirecting...</p>
-<?php
-      redirect("./");
-    };
-?>
-  </div>
+							$getParent = $con->prepare("SELECT itemName FROM items WHERE itemID=? AND itemPerms=1");
+							$getParent->bind_param("i", $parentID);
+							$getParent->execute();
+							$getParent->store_result();
+							if($getParent->num_rows > 0) {
+								$getParent->bind_result($parentName);
+								while($getParent->fetch()) {
+									$parentName = $parentName;
+								};
+							} else {
+		?>
+		<p class="alert">Invalid Parent ID, Redirecting...</p>
+		<?php
+								redirect("./");
+							};
+
+							if(isset($parentName)) {
+								if($type == "sub") {
+		?>
+		<form method="post" action="./action.php?a=create">
+			<input name="formType" type="hidden" value="sub" required />
+			<input name="formParent" type="hidden" value="<?php echo $parentID; ?>" required />
+			<table class="fixed">
+				<tr>
+					<td>
+						<p>Enter Sub Section Name</p>
+					</td>
+					<td>
+						<input name="formName" type="text" placeholder="Enter Sub Section Name" autofocus autocomplete="off" required />
+					</td>
+				</tr>
+				<tr>
+					<td></td>
+					<td>
+						<button class="confirm btn-warning" type="submit">Submit</button>
+					</td>
+				</tr>
+			</table>
+		</form>
+		<?php
+								} else if($type == "file") {
+		?>
+		<form method="post" action="./action.php?a=create" enctype="multipart/form-data">
+			<input name="formType" type="hidden" value="file" required />
+			<input name="formParent" type="hidden" value="<?php echo $parentID; ?>" required />
+			<table class="fixed">
+				<tr>
+					<td>
+						<p>Enter File Name</p>
+					</td>
+					<td>
+						<input name="formName" type="text" placeholder="Enter File Name" autofocus autocomplete="off" required />
+					</td>
+				</tr>
+				<tr>
+					<td>
+						<p>Select a File</p>
+					</td>
+					<td>
+						<input name="formFile" type="file" placeholder="Select a File" required />
+					</td>
+				</tr>
+				<tr>
+					<td></td>
+					<td>
+						<button class="confirm btn-warning" type="submit">Submit</button>
+					</td>
+				</tr>
+			</table>
+		</form>
+		<?php
+								} else if($type == "link") {
+		?>
+		<form method="post" action="./action.php?a=create">
+			<input name="formType" type="hidden" value="link" required />
+			<input name="formParent" type="hidden" value="<?php echo $parentID; ?>" required />
+			<table class="fixed">
+				<tr>
+					<td>
+						<p>Enter Link Name</p>
+					</td>
+					<td>
+						<input name="formName" type="text" placeholder="Enter Link Name" autofocus autocomplete="off" required />
+					</td>
+				</tr>
+				<tr>
+					<td>
+						<p>Enter a URL</p>
+					</td>
+					<td>
+						<input name="formURL" type="text" placeholder="Enter a URL" required />
+					</td>
+				</tr>
+				<tr>
+					<td></td>
+					<td>
+						<button class="confirm btn-warning" type="submit">Submit</button>
+					</td>
+				</tr>
+			</table>
+		</form>
+		<?php
+								};
+							};
+						};
+					} else {
+		?>
+		<p class="alert">Invalid Creation Type, Redirecting...</p>
+		<?php
+						redirect("./");
+					};
+				};
+			};
+		?>
+		<div class="clr"><a class="da-back" href="javascript:history.go(-1)">Back</a></div>
+	</div>
 </body>
 </html>

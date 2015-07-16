@@ -1,266 +1,83 @@
 <?php
-	include("./config.php");
+  include("./config.php");
 
-	$needle = strtolower($_POST['input']);
-	$found = false;
+  $needle = $_POST['input'];
 
-	if(strlen($needle) > 0) {
-		$byMachineName = $con->prepare("SELECT hostID,machineID,machineIP,machineName FROM machines WHERE machineIP LIKE '%$needle%' ORDER BY hostID ASC");
-		$byMachineName->execute();
-		$byMachineName->store_result();
-		if($byMachineName->num_rows > 0) {
-			$found = true;
-
-			$byMachineName->bind_result($hostID,$machineID,$machineIP,$machineName);
-			while($byMachineName->fetch()) {
-		?>
-		<tr>
-			<td class="fixed-100">
-  <?php
-            $getHostName = $con->prepare("SELECT hostName FROM hosts WHERE hostID=?");
-            $getHostName->bind_param("i", $hostID);
-            $getHostName->execute();
-            $getHostName->store_result();
-            $getHostName->bind_result($hostName);
-            while($getHostName->fetch()) {
-  ?>
-
-          <a href="./view.php?t=h&id=<?php echo $hostID; ?>"><?php echo $hostName; ?></a>
-
-  <?php
-            };
-            $getHostName->close();
-  ?>
-			</td>
-			<td>
-			  <a href="./view.php?t=m&id=<?php echo $machineID; ?>"><?php echo $machineIP; ?></a>
-			</td>
-			<td>
-			  <a href="./view.php?t=m&id=<?php echo $machineID; ?>"><?php echo $machineName; ?></a>
-			</td>
-	  <?php
-				$getMachineDetails = $con->prepare("SELECT machineOS,machinePurpose,machineUsage FROM machinedetails WHERE machineID=?");
-				$getMachineDetails->bind_param("i", $machineID);
-				$getMachineDetails->execute();
-				$getMachineDetails->store_result();
-				$getMachineDetails->bind_result($machineosID,$machinePurposeID,$machineUsageID);
-				while($getMachineDetails->fetch()) {
-        ?>
-		<td>
-  <?php
-              if($machineosID != NULL) {
-                $getMachineOSName = $con->preparE("SELECT machineosName FROM machineos WHERE machineosID=?");
-                $getMachineOSName->bind_param("i", $machineosID);
-                $getMachineOSName->execute();
-                $getMachineOSName->store_result();
-                $getMachineOSName->bind_result($machineosName);
-                while($getMachineOSName->fetch()) {
-  ?>
-          <p><?php echo $machineosName; ?></p>
-  <?php
-                };
-                $getMachineOSName->close();
-              } else {
-  ?>
-          <p class="danger">Undefined</p>
-  <?php
-              };
-  ?>
-        </td>
-        <td>
-<?php
-              if($machinePurposeID != NULL) {
-                $getMachinePurposeName = $con->prepare("SELECT machinePurpose FROM machinePurposes WHERE purposeID=?");
-                $getMachinePurposeName->bind_param("i", $machinePurposeID);
-                $getMachinePurposeName->execute();
-                $getMachinePurposeName->store_result();
-                $getMachinePurposeName->bind_result($machinePurposeName);
-                while($getMachinePurposeName->fetch()) {
+  if(strlen($needle) > 0) {
+    $find = $con->prepare("SELECT itemID,itemName,itemType FROM items WHERE itemName LIKE '%$needle%' AND (itemType=3 OR itemType=4)");
+    $find->execute();
+    $find->store_result();
+    if($find->num_rows > 0) {
+      $find->bind_result($itemID,$itemName,$itemType);
+      while($find->fetch()) {
 ?>
-          <p><?php echo $machinePurposeName; ?></p>
+<script>console.log("<?php echo $itemName. ' ' .$needle; ?>");</script>
+<tr>
+<td>
 <?php
-                };
-                $getMachinePurposeName->close();
-              } else {
+if($itemType == 2) {
 ?>
-          <p class="danger">Undefined</p>
+  <i class="fa fa-folder"></i>
+  <a href="./view.php?id=<?php echo $itemID; ?>"><?php echo $itemName; ?></a>
 <?php
-              };
+} else if($itemType == 3) {
 ?>
-        </td>
-        <td>
+  <i class="fa fa-file"></i>
 <?php
-              if($machineUsageID != NULL) {
-                $getMachineUsageName = $con->prepare("SELECT machineUsage FROM machineUsages WHERE usageID=?");
-                $getMachineUsageName->bind_param("i", $machineUsageID);
-                $getMachineUsageName->execute();
-                $getMachineUsageName->store_result();
-                $getMachineUsageName->bind_result($machineUsageName);
-                while($getMachineUsageName->fetch()) {
+  $getFileDetails = $con->prepare("SELECT fileDir FROM files WHERE itemID=?");
+  $getFileDetails->bind_param("i", $itemID);
+  $getFileDetails->execute();
+  $getFileDetails->store_result();
+  $getFileDetails->bind_result($fileDir);
+  while($getFileDetails->fetch()) {
+?>
+  <a href="<?php echo $fileDir; ?>" download><?php echo $itemName; ?></a>
+<?php
+  };
+  $getFileDetails->close();
+} else if($itemType == 4) {
+?>
+  <i class="fa fa-link"></i>
+<?php
+  $getLinkDetails = $con->prepare("SELECT outboundLink FROM outbound WHERE itemID=?");
+  $getLinkDetails->bind_param("i", $itemID);
+  $getLinkDetails->execute();
+  $getLinkDetails->store_result();
+  $getLinkDetails->bind_result($outboundLink);
+  while($getLinkDetails->fetch()) {
+?>
+  <a href="<?php echo $outboundLink; ?>" target="_blank"><?php echo $itemName; ?></a>
+<?php
+  };
+  $getLinkDetails->close();
+};
+?>
+</td>
+<td class="fixed-100 text-right">
+<?php
+  if($itemType == 3 || $itemType == 4) {
+?>
+  <a class="confirm" href="./delete.php?id=<?php echo $itemID; ?>"><i class="fa fa-times"></i></a>
+<?php
+  };
+?>
+  <a href="./edit.php?id=<?php echo $itemID; ?>"><i class="fa fa-cog"></i></a>
+</td>
+</tr>
+<?php
+      };
+    } else {
   ?>
-          <p><?php echo $machineUsageName; ?></p>
+  <tr>
+    <td colspan="2"><p class="alert">Nothing Found...</p></td>
+  </tr>
   <?php
-                };
-                $getMachineUsageName->close();
-              } else {
-?>
-          <p class="danger">Undefined</p>
-<?php
-              };
-?>
-        </td>
-  <?php
-            };
-            $getMachineDetails->close();
+    };
+  } else {
   ?>
-			<td class="fixed-100 options">
-				  <a href="./view.php?t=m&id=<?php echo $machineID; ?>"><i class="fa fa-fw fa-eye"></i></a>
-			</td>
-		</tr>
-		<?php
-			};
-		} else {
-			$found = false;
-		};
-		$byMachineName->close();
-
-		if($found == false) {
-			$byMachineIP = $con->prepare("SELECT hostID,machineID,machineIP,machineName FROM machines WHERE machineName LIKE '%$needle%' ORDER BY hostID ASC");
-			$byMachineIP->execute();
-			$byMachineIP->store_result();
-			if($byMachineIP->num_rows > 0) {
-				$found = true;
-
-				$byMachineIP->bind_result($hostID,$machineID,$machineIP,$machineName);
-				while($byMachineIP->fetch()) {
-			?>
-			<tr>
-				<td class="fixed-100">
-	  <?php
-	            $getHostName = $con->prepare("SELECT hostName FROM hosts WHERE hostID=?");
-	            $getHostName->bind_param("i", $hostID);
-	            $getHostName->execute();
-	            $getHostName->store_result();
-	            $getHostName->bind_result($hostName);
-	            while($getHostName->fetch()) {
-	  ?>
-
-	          <a href="./view.php?t=h&id=<?php echo $hostID; ?>"><?php echo $hostName; ?></a>
-
-	  <?php
-	            };
-	            $getHostName->close();
-	  ?>
-				</td>
-				<td>
-				  <a href="./view.php?t=m&id=<?php echo $machineID; ?>"><?php echo $machineIP; ?></a>
-				</td>
-				<td>
-				  <a href="./view.php?t=m&id=<?php echo $machineID; ?>"><?php echo $machineName; ?></a>
-				</td>
-		  <?php
-					$getMachineDetails = $con->prepare("SELECT machineOS,machinePurpose,machineUsage FROM machinedetails WHERE machineID=?");
-					$getMachineDetails->bind_param("i", $machineID);
-					$getMachineDetails->execute();
-					$getMachineDetails->store_result();
-					$getMachineDetails->bind_result($machineosID,$machinePurposeID,$machineUsageID);
-					while($getMachineDetails->fetch()) {
-	        ?>
-			<td>
-	  <?php
-	              if($machineosID != NULL) {
-	                $getMachineOSName = $con->preparE("SELECT machineosName FROM machineos WHERE machineosID=?");
-	                $getMachineOSName->bind_param("i", $machineosID);
-	                $getMachineOSName->execute();
-	                $getMachineOSName->store_result();
-	                $getMachineOSName->bind_result($machineosName);
-	                while($getMachineOSName->fetch()) {
-	  ?>
-	          <p><?php echo $machineosName; ?></p>
-	  <?php
-	                };
-	                $getMachineOSName->close();
-	              } else {
-	  ?>
-	          <p class="danger">Undefined</p>
-	  <?php
-	              };
-	  ?>
-	        </td>
-	        <td>
-	<?php
-	              if($machinePurposeID != NULL) {
-	                $getMachinePurposeName = $con->prepare("SELECT machinePurpose FROM machinePurposes WHERE purposeID=?");
-	                $getMachinePurposeName->bind_param("i", $machinePurposeID);
-	                $getMachinePurposeName->execute();
-	                $getMachinePurposeName->store_result();
-	                $getMachinePurposeName->bind_result($machinePurposeName);
-	                while($getMachinePurposeName->fetch()) {
-	?>
-	          <p><?php echo $machinePurposeName; ?></p>
-	<?php
-	                };
-	                $getMachinePurposeName->close();
-	              } else {
-	?>
-	          <p class="danger">Undefined</p>
-	<?php
-	              };
-	?>
-	        </td>
-	        <td>
-	<?php
-	              if($machineUsageID != NULL) {
-	                $getMachineUsageName = $con->prepare("SELECT machineUsage FROM machineUsages WHERE usageID=?");
-	                $getMachineUsageName->bind_param("i", $machineUsageID);
-	                $getMachineUsageName->execute();
-	                $getMachineUsageName->store_result();
-	                $getMachineUsageName->bind_result($machineUsageName);
-	                while($getMachineUsageName->fetch()) {
-	  ?>
-	          <p><?php echo $machineUsageName; ?></p>
-	  <?php
-	                };
-	                $getMachineUsageName->close();
-	              } else {
-	?>
-	          <p class="danger">Undefined</p>
-	<?php
-	              };
-	?>
-	        </td>
-	  <?php
-	            };
-	            $getMachineDetails->close();
-	  ?>
-				<td class="fixed-100 options">
-					  <a href="./view.php?t=m&id=<?php echo $machineID; ?>"><i class="fa fa-fw fa-eye"></i></a>
-				</td>
-			</tr>
-			<?php
-				};
-			} else {
-				$found = false;
-			};
-			$byMachineIP->close();
-		};
-
-		if($found == false) {
-?>
-	<tr>
-		<td colspan="7">
-			<p class="alert">Nothing Found...</p>
-		</td>
-	</tr>
-<?php
-		};
-	} else {
-?>
-	<tr>
-		<td colspan="7">
-			<p class="alert">Search Something...</p>
-		</td>
-	</tr>
-<?php
-	};
+  <tr>
+    <td colspan="2"><p class="alert">Search Something...</p></td>
+  </tr>
+  <?php
+  };
 ?>

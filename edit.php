@@ -1,367 +1,336 @@
-<?php include('./config.php'); ?>
+<?php include('config.php'); ?>
 <html>
 <head>
-<?php include('./head.php'); ?>
+	<?php include('head.php'); ?>
 </head>
 <body>
-  <?php include('./nav.php'); ?>
-  <div class="main wrp">
-<?php
-  if($_SESSION['vm_userPerms'] > 3) {
-    if(isset($_GET['t'])) {
-      if(isset($_GET['id'])) {
-        $editType = $_GET['t'];
-        $editID = $_GET['id'];
+	<?php include('nav.php'); ?>
+	<div class="clr wrp mrg-top-lrg">
+		<?php include('brand.php'); ?>
+	</div>
+	<div class="clr wrp mrg-btm-lrg">
+		<p><?php include('motd.php'); ?></p>
+	</div>
+	<div class="clr wrp">
+		<?php
+			if(!isset($_GET['id'])) {
+		?>
+		<p class="alert">An ID is Required, Redirecting...</p>
+		<?php
+				redirect("./");
+			} else {
+				$itemID = $_GET['id'];
 
-        if($editType == "h") {
-          $checkID = $con->prepare("SELECT * FROM hosts WHERE hostID=?");
-          $checkID->bind_param("i", $editID);
-          $checkID->execute();
-          $checkID->store_result();
-          if($checkID->num_rows > 0) {
-            $getHost = $con->prepare("SELECT hostID,hostIP,hostName,hostPerms FROM hosts WHERE hostID=?");
-            $getHost->bind_param("i", $editID);
-            $getHost->execute();
-            $getHost->store_result();
-            $getHost->bind_result($hostID,$hostIP,$hostName,$hostPerms);
-            while($getHost->fetch()) {
-              $hostID = $hostID;
-              $hostIP = $hostIP;
-              $hostName = $hostName;
-              $hostPerms = $hostPerms;
-            };
-            $getHost->close();
-?>
-    <form method="post" action="./action.php?a=edit">
-      <input name="formID" type="hidden" value="<?php echo $hostID; ?>" required />
-      <input name="editType" type="hidden" value="<?php echo $editType; ?>" required />
-      <h1 class="mrg-btm-x-lrg">Edit <?php echo $hostName; ?> / <?php echo $hostIP; ?></h1>
-      <table class="fixed">
-        <tr>
-          <td><p>Edit Host Name</p></td>
-          <td><input name="formName" type="text" value="<?php echo $hostName; ?>" placeholder="Host Name" autocomplete="off" autofocus required /></td>
-        </tr>
-        <tr>
-          <td><p>Edit Host IP</p></td>
-          <td><input name="formIP" type="text" value="<?php echo $hostIP; ?>" placeholder="Host IP" autocomplete="off" autofocus required /></td>
-        </tr>
-        <tr>
-          <td><p>Edit Visibility</p></td>
-          <td>
-            <select name="formPerms" required>
-              <option disabled>Select an Option</option>
-<?php
-            if($hostPerms == 1) {
-?>
-              <option value="1" selected>Visible</option>
-<?php
-            } else {
-?>
-              <option value="1">Visible</option>
-<?php
-            };
-            if($hostPerms == 0) {
-?>
-              <option value="0" selected>Not Visible</option>
-<?php
-            } else {
-?>
-              <option value="0">Not Visible</option>
-<?php
-            };
-?>
-            </select>
-          </td>
-        </tr>
-        <tr>
-          <td></td>
-          <td><button class="btn-warning confirm" type="submit">Submit</button></td>
-        </tr>
-      </table>
-    </form>
-<?php
-          } else {
-?>
-    <p class="alert">invalid host id, redirecting...</p>
-<?php
-            redirect("./admin.php");
-          };
-          $checkID->close();
-        } else if($editType == "m") {
-          $checkID = $con->prepare("SELECT * FROM machines WHERE machineID=?");
-          $checkID->bind_param("i", $editID);
-          $checkID->execute();
-          $checkID->store_result();
-          if($checkID->num_rows > 0) {
-            $getMachine = $con->prepare("SELECT machineID,machineIP,machineName,hostID,machinePerms FROM machines WHERE machineID=?");
-            $getMachine->bind_param("i", $editID);
-            $getMachine->execute();
-            $getMachine->store_result();
-            $getMachine->bind_result($machineID,$machineIP,$machineName,$machineHostID,$machinePerms);
-            while($getMachine->fetch()) {
-              $machineID = $machineID;
-              $machineHostID = $machineHostID;
-              $machinePerms = $machinePerms;
-            };
-            $getMachine->close();
+				$getItemType = $con->prepare("SELECT itemType FROM items WHERE itemID=?");
+				$getItemType->bind_param("i", $itemID);
+				$getItemType->execute();
+				$getItemType->store_result();
+				if($getItemType->num_rows < 0) {
+		?>
+		<p class="alert">Invalid ID, Redirecting...</p>
+		<?php
+					redirect("./");
+				} else {
+					$getItemType->bind_result($itemType);
+					while($getItemType->fetch()) {
+						$itemType = $itemType;
+					};
+				};
+				$getItemType->close();
 
-            $getMachineDetails = $con->prepare("SELECT machinePurpose,machineUsage FROM machinedetails WHERE machineID=?");
-            $getMachineDetails->bind_param("i", $machineID);
-            $getMachineDetails->execute();
-            $getMachineDetails->store_result();
-            $getMachineDetails->bind_result($machinePurposeID,$machineUsageID);
-            while($getMachineDetails->fetch()) {
-              $machinePurposeID = $machinePurposeID;
-              $machineUsageID = $machineUsageID;
-            };
-            $getMachineDetails->close();
-?>
-    <form method="post" action="./action.php?a=edit">
-      <input name="formID" type="hidden" value="<?php echo $machineID; ?>" required />
-      <input name="editType" type="hidden" value="<?php echo $editType; ?>" required />
-      <h1 class="mrg-btm-x-lrg">Edit <?php echo $machineName; ?> / <?php echo $machineIP; ?></h1>
-      <table class="fixed">
-        <tr>
-          <td><p>Edit Machine Host</p></td>
-          <td>
-            <select name="formHost" required />
-<?php
-            if($machineHostID == NULL) {
-?>
-            <option selected disabled>Select a Host</option>
-<?php
-            } else {
-?>
-            <option disabled>Select a Host</option>
-<?php
-            };
-            $getHosts = $con->prepare("SELECT hostID,hostIP,hostName FROM hosts WHERE hostPerms=1");
-            $getHosts->execute();
-            $getHosts->store_result();
-            $getHosts->bind_result($hostID,$hostIP,$hostName);
-            while($getHosts->fetch()) {
-              if($hostID == $machinePurposeID) {
-?>
-              <option value="<?php echo $hostID; ?>" selected><?php echo $hostName; ?> / <?php echo $hostIP; ?></option>
-<?php
-              } else {
-?>
-              <option value="<?php echo $hostID; ?>"><?php echo $hostName; ?> / <?php echo $hostIP; ?></option>
-<?php
-              };
-            };
-            $getHosts->close();
-?>
-            </select>
-          </td>
-        </tr>
-        <tr>
-          <td><p>Edit Machine Purpose</p></td>
-          <td>
-            <select name="formPurpose" required>
-<?php
-            if($machinePurposeID == NULL) {
-?>
-            <option selected disabled>Select a Purpose</option>
-<?php
-            } else {
-?>
-            <option disabled>Select a Purpose</option>
-<?php
-            };
-            $getPurposes = $con->prepare("SELECT purposeID,machinePurpose FROM machinepurposes WHERE machineID=?");
-            $getPurposes->bind_param("i", $editID);
-            $getPurposes->execute();
-            $getPurposes->store_result();
-            $getPurposes->bind_result($purposeID,$purposeName);
-            while($getPurposes->fetch()) {
-              if($purposeID == $machinePurposeID) {
-?>
-              <option value="<?php echo $purposeID; ?>" selected><?php echo $purposeName; ?></option>
-<?php
-              } else {
-?>
-              <option value="<?php echo $purposeID; ?>"><?php echo $purposeName; ?></option>
-<?php
-              };
-            };
-            $getPurposes->close();
-?>
-            </select>
-          </td>
-        </tr>
-        <tr>
-          <td><p>Edit Machine Usage</p></td>
-          <td>
-            <select name="formUsage" required>
-<?php
-            if($machinePurposeID == NULL) {
-?>
-            <option selected disabled>Select a Usage</option>
-<?php
-            } else {
-?>
-            <option disabled>Select a Usage</option>
-<?php
-            };
-            $getUsages = $con->prepare("SELECT usageID,machineUsage FROM machineUsages");
-            $getUsages->bind_param("i", $editID);
-            $getUsages->execute();
-            $getUsages->store_result();
-            $getUsages->bind_result($usageID,$usageName);
-            while($getUsages->fetch()) {
-              if($usageID == $machineUsageID) {
-?>
-              <option value="<?php echo $usageID; ?>" selected><?php echo $usageName; ?></option>
-<?php
-              } else {
-?>
-              <option value="<?php echo $usageID; ?>"><?php echo $usageName; ?></option>
-<?php
-              };
-            };
-            $getUsages->close();
-?>
-            </select>
-          </td>
-        </tr>
-        <tr>
-          <td><p>Edit Visibility</p></td>
-          <td>
-            <select name="formPerms" required>
-              <option disabled>Select an Option</option>
-<?php
-            if($machinePerms == 1) {
-?>
-              <option value="1" selected>Visible</option>
-<?php
-            } else {
-?>
-              <option value="1">Visible</option>
-<?php
-            };
-            if($machinePerms == 0) {
-?>
-              <option value="0" selected>Not Visible</option>
-<?php
-            } else {
-?>
-              <option value="0">Not Visible</option>
-<?php
-            };
-?>
-            </select>
-          </td>
-        </tr>
-        <tr>
-          <td></td>
-          <td><button class="btn-warning confirm">Submit</button></td>
-        </tr>
-      </table>
-    </form>
-<?php
-          } else {
-?>
-    <p class="alert">invalid machine id, redirecting...</p>
-<?php
-            redirect("./admin.php");
-          };
-          $checkID->close();
-        } else if($editType == "u") {
-          $checkID = $users->prepare("SELECT userID,userName,userFirst,userLast,userEmail FROM users WHERE userID=?");
-          $checkID->bind_param("i", $editID);
-          $checkID->execute();
-          $checkID->store_result();
-          if($checkID->num_rows > 0) {
-            $checkID->bind_result($userID,$userName,$userFirst,$userLast,$userEmail);
-            while($checkID->fetch()) {
-              $userID = $userID;
-              $userName = $userName;
-              $userFirst = $userFirst;
-              $userLast = $userLast;
-              $userEmail = $userEmail;
-            };
-?>
-    <form class="mrg-btm-x-lrg" method="post" action="./action.php?a=edit">
-      <input name="formID" type="hidden" value="<?php echo $userID; ?>" required />
-      <input name="editType" type="hidden" value="<?php echo $editType; ?>" required />
-      <h1 class="mrg-btm-x-lrg">Edit <?php echo $userName; ?> / <?php echo $userFirst; ?> <?php echo $userLast; ?></h1>
-      <table class="fixed">
-        <tr>
-          <td><p>Edit Username</p></td>
-          <td><input name="formName" type="text" value="<?php echo $userName; ?>" autocomplete="off" autofocus required /></td>
-        </tr>
-        <tr>
-          <td><p>Edit First Name(s)</p></td>
-          <td><input name="formFirst" type="text" value="<?php echo $userFirst; ?>" autocomplete="off" autofocus required /></td>
-        </tr>
-        <tr>
-          <td><p>Edit Last Name(s)</p></td>
-          <td><input name="formLast" type="text" value="<?php echo $userLast; ?>" autocomplete="off" autofocus required /></td>
-        </tr>
-        <tr>
-          <td><p>Edit Email Address</p></td>
-          <td><input name="formEmail" type="email" value="<?php echo $userEmail; ?>" autocomplete="off" autofocus required /></td>
-        </tr>
-        <tr>
-          <td></td>
-          <td><button class="btn-warning confirm">Submit</button></td>
-        </tr>
-      </table>
-    </form>
-    <div class="clr">
-      <form class="mrg-btm-x-lrg" method="post" action="./action.php?a=edit">
-        <input name="formID" type="hidden" value="<?php echo $userID; ?>" required />
-        <input name="editType" type="hidden" value="up" required />
-        <table class="fixed">
-          <tr>
-            <td><p>New Password</p></td>
-            <td><input name="formPass" type="password" placeholder="Password" autocomplete="off" autofocus required /></td>
-          </tr>
-          <tr>
-            <td><p>Retype Password</p></td>
-            <td><input name="rePass" type="password" placeholder="Retype Password" autocomplete="off" autofocus required /></td>
-          </tr>
-          <tr>
-            <td></td>
-            <td><button class="btn-warning confirm">Submit</button></td>
-          </tr>
-        </table>
-      </form>
-  </div>
-<?php
-          } else {
-?>
-    <p class="alert">invalid user id, redirecting...</p>
-<?php
-            redirect("./admin.php");
-          };
-          $checkID->close();
-        } else {
-?>
-    <p class="alert">a valid edit type is required, redirecting...</p>
-<?php
-          redirect("./admin.php");
-        };
-      } else {
-?>
-    <p class="alert">an edit id is reuqired, redirecting...</p>
-<?php
-        redirect("./admin.php");
-      };
-    } else {
-?>
-    <p class="alert">an edit type is required, redirecting...</p>
-<?php
-      redirect("./admin.php");
-    };
-  } else {
-?>
-    <p class="alert">you do not have permission to view this page, redirecting...</p>
-<?php
-    redirect("./");
-  };
-?>
-  </div>
+				if($itemType === 1) {
+					$getSectionDetails = $con->prepare("SELECT itemName,itemPerms FROM items WHERE itemID=?");
+					$getSectionDetails->bind_param("i", $itemID);
+					$getSectionDetails->execute();
+					$getSectionDetails->store_result();
+					$getSectionDetails->bind_result($itemName,$itemPerms);
+					while($getSectionDetails->fetch()) {
+						$itemName = $itemName;
+						$itemPerms = $itemPerms;
+					};
+					$getSectionDetails->close();
+		?>
+		<form method="post" action="./action.php?a=edit">
+			<input name="formType" type="hidden" value="section" required />
+			<input name="formID" type="hidden" value="<?php echo $itemID; ?>" required />
+			<table class="fixed">
+				<tr>
+					<td>
+						<p>Edit Section Name</p>
+					</td>
+					<td>
+						<input name="formName" type="text" value="<?php echo $itemName; ?>" autofocus autocomplete="off" required />
+					</td>
+				</tr>
+				<tr>
+					<td>
+						<p>Edit Visiblity</p>
+					</td>
+					<td>
+						<select name="formPerms" required>
+							<option disabled>Select an Option</option>
+		<?php
+					if($itemPerms == 1) {
+		?>
+							<option value="1" selected>Visible</option>
+		<?php
+					} else {
+		?>
+							<option value="1">Visible</option>
+		<?php
+					};
+					if($itemPerms == 2) {
+		?>
+							<option value="0" selected>Not Visible</option>
+		<?php
+					} else {
+		?>
+							<option value="0">Not Visible</option>
+		<?php
+					};
+		?>
+						</select>
+					</td>
+				</tr>
+				<tr>
+					<td></td>
+					<td>
+						<button class="confirm btn-warning" type="submit">Submit</button>
+					</td>
+				</tr>
+			</table>
+		</form>
+		<?php
+				} else if($itemType == 2) {
+					$getSubDetails = $con->prepare("SELECT itemName,itemPerms FROM items WHERE itemID=?");
+					$getSubDetails->bind_param("i", $itemID);
+					$getSubDetails->execute();
+					$getSubDetails->store_result();
+					$getSubDetails->bind_result($itemName,$itemPerms);
+					while($getSubDetails->fetch()) {
+						$itemName = $itemName;
+						$itemPerms = $itemPerms;
+					};
+					$getSubDetails->close();
+		?>
+		<form method="post" action="./action.php?a=edit">
+			<input name="formType" type="hidden" value="sub" required />
+			<input name="formID" type="hidden" value="<?php echo $itemID; ?>" required />
+			<table class="fixed">
+				<tr>
+					<td>
+						<p>Edit Sub Section Name</p>
+					</td>
+					<td>
+						<input name="formName" type="text" value="<?php echo $itemName; ?>" autofocus autocomplete="off" required />
+					</td>
+				</tr>
+				<tr>
+					<td>
+						<p>Edit Visiblity</p>
+					</td>
+					<td>
+						<select name="formPerms" required>
+							<option disabled>Select an Option</option>
+		<?php
+					if($itemPerms == 1) {
+		?>
+							<option value="1" selected>Visible</option>
+		<?php
+					} else {
+		?>
+							<option value="1">Visible</option>
+		<?php
+					};
+					if($itemPerms == 2) {
+		?>
+							<option value="0" selected>Not Visible</option>
+		<?php
+					} else {
+		?>
+							<option value="0">Not Visible</option>
+		<?php
+					};
+		?>
+						</select>
+					</td>
+				</tr>
+				<tr>
+					<td></td>
+					<td>
+						<button class="confirm btn-warning" type="submit">Submit</button>
+					</td>
+				</tr>
+			</table>
+		</form>
+		<?php
+				} else if($itemType == 3) {
+					$getItemDetails = $con->prepare("SELECT itemName,itemPerms FROM items WHERE itemID=?");
+					$getItemDetails->bind_param("i", $itemID);
+					$getItemDetails->execute();
+					$getItemDetails->store_result();
+					$getItemDetails->bind_result($itemName,$itemPerms);
+					while($getItemDetails->fetch()) {
+						$itemName = $itemName;
+						$itemPerms = $itemPerms;
+					};
+					$getItemDetails->close();
+		?>
+		<form method="post" action="./action.php?a=edit" enctype="multipart/form-data">
+			<input name="formType" type="hidden" value="file" required />
+			<input name="formID" type="hidden" value="<?php echo $itemID; ?>" required />
+			<table class="fixed">
+				<tr>
+					<td>
+						<p>Edit File Name *</p>
+					</td>
+					<td>
+						<input name="formName" type="text" value="<?php echo $itemName; ?>" autofocus autocomplete="off" required />
+					</td>
+				</tr>
+				<tr>
+					<td>
+						<p>Edit Visiblity *</p>
+					</td>
+					<td>
+						<select name="formPerms" required>
+							<option disabled>Select an Option</option>
+		<?php
+					if($itemPerms == 1) {
+		?>
+							<option value="1" selected>Visible</option>
+		<?php
+					} else {
+		?>
+							<option value="1">Visible</option>
+		<?php
+					};
+					if($itemPerms == 2) {
+		?>
+							<option value="0" selected>Not Visible</option>
+		<?php
+					} else {
+		?>
+							<option value="0">Not Visible</option>
+		<?php
+					};
+		?>
+						</select>
+					</td>
+				</tr>
+				<tr>
+					<td>
+						<p>Edit File</p>
+					</td>
+					<td>
+						<input name="formFile" type="file" />
+					</td>
+				</tr>
+				<tr>
+					<td></td>
+					<td>
+						<button class="confirm btn-warning" type="submit">Submit</button>
+					</td>
+				</tr>
+				<tr>
+					<td></td>
+					<td>
+						<p>Options with a * are <b>Required</b></p>
+					</td>
+				</tr>
+			</table>
+		</form>
+		<?php
+				} else if($itemType == 4) {
+					$getItemDetails = $con->prepare("SELECT itemName,itemPerms FROM items WHERE itemID=?");
+					$getItemDetails->bind_param("i", $itemID);
+					$getItemDetails->execute();
+					$getItemDetails->store_result();
+					$getItemDetails->bind_result($itemName,$itemPerms);
+					while($getItemDetails->fetch()) {
+						$itemName = $itemName;
+						$itemPerms = $itemPerms;
+					};
+					$getItemDetails->close();
+
+					$getLinkDetails = $con->prepare("SELECT outboundLink FROM outbound WHERE itemID=?");
+					$getLinkDetails->bind_param("i", $itemID);
+					$getLinkDetails->execute();
+					$getLinkDetails->store_result();
+					$getLinkDetails->bind_result($outboundLink);
+					while($getLinkDetails->fetch()) {
+						$outboundLink = $outboundLink;
+					};
+					$getLinkDetails->close();
+		?>
+		<form method="post" action="./action.php?a=edit">
+			<input name="formType" type="hidden" value="link" required />
+			<input name="formID" type="hidden" value="<?php echo $itemID; ?>" required />
+			<table class="fixed">
+				<tr>
+					<td>
+						<p>Edit Link Name</p>
+					</td>
+					<td>
+						<input name="formName" type="text" value="<?php echo $itemName; ?>" autofocus autocomplete="off" required />
+					</td>
+				</tr>
+				<tr>
+					<td>
+						<p>Edit Visiblity</p>
+					</td>
+					<td>
+						<select name="formPerms" required>
+							<option disabled>Select an Option</option>
+		<?php
+					if($itemPerms == 1) {
+		?>
+							<option value="1" selected>Visible</option>
+		<?php
+					} else {
+		?>
+							<option value="1">Visible</option>
+		<?php
+					};
+					if($itemPerms == 2) {
+		?>
+							<option value="0" selected>Not Visible</option>
+		<?php
+					} else {
+		?>
+							<option value="0">Not Visible</option>
+		<?php
+					};
+		?>
+						</select>
+					</td>
+				</tr>
+				<tr>
+					<td>
+						<p>Edit URL</p>
+					</td>
+					<td>
+						<input name="formURL" type="text" value="<?php echo $outboundLink; ?>" autocomplete="off" required />
+					</td>
+				</tr>
+				<tr>
+					<td></td>
+					<td>
+						<button class="confirm btn-warning" type="submit">Submit</button>
+					</td>
+				</tr>
+			</table>
+		</form>
+		<?php
+				} else {
+		?>
+		<p class="alert">Invalid Item Type, Redirecting...</p>
+		<?php
+					redirect("./");
+				};
+			};
+		?>
+		<div class="clr"><a class="da-back" href="javascript:history.go(-1)">Back</a></div>
+	</div>
 </body>
 </html>
